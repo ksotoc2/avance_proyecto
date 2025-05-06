@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo de Libros - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-book"></i> Catálogo de Libros</h2>
+                {% if user.perfil.es_bibliotecario %}
+                <a href="{% url 'nuevo_libro' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nuevo Libro
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-8 mb-3">
+            <form method="get" class="d-flex">
+                <input type="text" name="q" class="form-control me-2" placeholder="Buscar por título o autor..." value="{{ query|default:'' }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </form>
+        </div>
+        <div class="col-md-4 mb-3">
+            <form method="get" class="d-flex">
+                <select name="categoria" class="form-select me-2" onchange="this.form.submit()">
+                    <option value="">Todas las categorías</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" {% if categoria_seleccionada == categoria.id %}selected{% endif %}>
+                        {{ categoria.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        {% for libro in libros %}
+        <div class="col">
+            <div class="card h-100 {% if not libro.disponible %}border-danger{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge {% if libro.disponible %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if libro.disponible %}Disponible{% else %}Agotado{% endif %}
+                    </span>
+                    <span class="badge bg-info">{{ libro.categoria.nombre }}</span>
+                </div>
+                <div class="card-img-top p-3 text-center">
+                    {% if libro.portada %}
+                    <img src="{{ libro.portada.url }}" alt="{{ libro.titulo }}" class="img-fluid rounded" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded" style="height: 200px;">
+                        <i class="bi bi-book" style="font-size: 3rem; color: #6c757d;"></i>
+                        <p class="text-muted mt-2">Sin imagen de portada</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ libro.titulo }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ libro.autor }}</h6>
+                    <p class="card-text">
+                        <small class="text-muted">Editorial: {{ libro.editorial }}</small><br>
+                        <small class="text-muted">ISBN: {{ libro.isbn }}</small><br>
+                        <small class="text-muted">Stock: {{ libro.stock }}</small>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="row g-2">
+                        <div class="col-{% if user.perfil.es_bibliotecario %}6{% else %}12{% endif %}">
+                            <div class="d-grid">
+                                <a href="{% url 'detalle_libro' libro.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-info-circle"></i> Detalles
+                                </a>
+                            </div>
+                        </div>
+                        {% if user.perfil.es_bibliotecario %}
+                        <div class="col-6">
+                            <div class="d-grid">
+                                <a href="{% url 'editar_libro' libro.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                        {% if libro.disponible %}
+                        <div class="col-12 mt-1">
+                            <div class="d-grid">
+                                <a href="{% url 'registrar_prestamo' %}?libro={{ libro.id }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-plus-circle"></i> Prestar
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No se encontraron libros que coincidan con los criterios de búsqueda.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

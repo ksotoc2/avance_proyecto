@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Préstamos - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-journal-check"></i> Mis Préstamos</h2>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Préstamos Activos</h6>
+        </div>
+        <div class="card-body">
+            {% with activos=prestamos.filter|dictsort:"estado" %}
+            {% if activos %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Libro</th>
+                            <th>Fecha Préstamo</th>
+                            <th>Fecha Devolución</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestamo in prestamos %}
+                        {% if prestamo.estado == 'activo' or prestamo.estado == 'retrasado' %}
+                        <tr class="{% if prestamo.estado == 'retrasado' %}table-danger{% endif %}">
+                            <td>{{ prestamo.libro.titulo }}</td>
+                            <td class="text-center">{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                            <td class="text-center">{{ prestamo.fecha_devolucion_esperada|date:"d/m/Y" }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if prestamo.estado == 'activo' %}bg-success{% elif prestamo.estado == 'retrasado' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ prestamo.get_estado_display }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'detalle_prestamo' prestamo.id %}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-info-circle"></i> Detalles
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No tienes préstamos activos en este momento.
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Préstamos Anteriores</h6>
+        </div>
+        <div class="card-body">
+            {% with anteriores=prestamos.filter|dictsort:"estado" %}
+            {% if anteriores %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Libro</th>
+                            <th>Fecha Préstamo</th>
+                            <th>Fecha Devolución</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestamo in prestamos %}
+                        {% if prestamo.estado == 'devuelto' or prestamo.estado == 'perdido' %}
+                        <tr>
+                            <td>{{ prestamo.libro.titulo }}</td>
+                            <td class="text-center">{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                            <td class="text-center">{{ prestamo.fecha_devolucion_esperada|date:"d/m/Y" }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if prestamo.estado == 'devuelto' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                    {{ prestamo.get_estado_display }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'detalle_prestamo' prestamo.id %}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-info-circle"></i> Detalles
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No tienes préstamos anteriores.
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+{% endblock %}

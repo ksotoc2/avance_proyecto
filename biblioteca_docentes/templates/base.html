@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Préstamo de Libros{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            padding-top: 70px; /* Aumentado para dar más espacio */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Navbar fijo */
+        .navbar {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 10px 20px; /* Más padding para evitar cortes */
+            height: 60px; /* Altura fija para la navbar */
+            z-index: 1030; /* Asegurar que esté por encima de todo */
+        }
+        
+        /* Sidebar fijo */
+        .sidebar {
+            position: fixed;
+            top: 60px; /* Ajustado a la nueva altura de navbar */
+            left: 0;
+            width: 260px; /* Aumentado para evitar cortes */
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            z-index: 1020;
+            background-color: #f8f9fa;
+            border-right: 2px solid #dee2e6;
+            padding: 15px 0; /* Padding vertical */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+        
+        /* Enlaces del sidebar */
+        .sidebar .nav-link {
+            color: #333;
+            padding: 12px 20px; /* Más padding para evitar cortes */
+            margin: 2px 0; /* Margen entre enlaces */
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px; /* Espacio entre icono y texto */
+            font-size: 1.1rem; /* Tamaño de icono ligeramente mayor */
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: #e9ecef;
+            font-weight: bold;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        /* Encabezados de sección en sidebar */
+        .nav-header {
+            padding: 10px 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        
+        /* Contenido principal */
+        .main-content {
+            padding: 25px; /* Más padding para el contenido */
+            margin-top: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            min-height: calc(100vh - 140px); /* Altura mínima para evitar páginas cortas */
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 15px 0;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        /* Mensajes de alerta */
+        .messages .alert {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* Ajustes para dispositivos móviles */
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                margin-bottom: 20px;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+            
+            body {
+                padding-top: 70px;
+            }
+            
+            .sidebar .nav-link {
+                border-radius: 0;
+            }
+            
+            .sidebar .nav-link:hover {
+                transform: none;
+            }
+        }
+        
+        /* Estilos para tarjetas y tablas */
+        .card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            font-weight: bold;
+        }
+        
+        .table {
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Centrar los encabezados de las tablas */
+        .table thead th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: 600;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .table th, .table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+        
+        /* Botones con mejor espaciado */
+        .btn {
+            padding: 8px 16px;
+            margin-right: 5px;
+            border-radius: 5px;
+        }
+        
+        /* Asegurar que los botones en grupos tengan el mismo ancho */
+        .btn-group .btn,
+        .d-flex .btn,
+        .card-footer .btn {
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        /* Asegurar que los botones en columnas tengan el mismo ancho */
+        .d-flex.flex-column .btn,
+        .d-grid .btn {
+            width: 100%;
+        }
+        
+        /* Mejorar la visualización de botones en dispositivos móviles */
+        @media (max-width: 767.98px) {
+            .d-md-flex.justify-content-md-end {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+            
+            .d-md-flex.justify-content-md-end .btn {
+                width: 100%;
+                margin-right: 0 !important;
+                margin-bottom: 0.5rem;
+            }
+        }
+        
+        /* Formularios con mejor espaciado */
+        .form-control, .form-select {
+            padding: 10px 15px;
+            height: auto;
+            border-radius: 5px;
+        }
+        
+        label.form-label {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        /* Asegurar que los contenedores tengan suficiente espacio */
+        .container-fluid {
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+        
+        /* Asegurar que los títulos tengan suficiente espacio */
+        h2, h3, h4, h5, h6 {
+            margin-bottom: 20px;
+            padding: 5px 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="bi bi-book"></i> Sistema de Préstamo de Libros
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'perfil' %}">Mi Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'logout' %}">
+                                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{% url 'login' %}">Iniciar Sesión</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            {% if user.is_authenticated %}
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/prestamos/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/libros/' %}active{% endif %}" href="{% url 'lista_libros' %}">
+                                <i class="bi bi-book"></i> Catálogo de Libros
+                            </a>
+                        </li>
+                        
+                        {% if user.perfil.es_docente %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/prestamos/mis-prestamos/' %}active{% endif %}" href="{% url 'mis_prestamos' %}">
+                                <i class="bi bi-journal-check"></i> Mis Préstamos
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/prestamos/historial/' %}active{% endif %}" href="{% url 'historial_prestamos' %}">
+                                <i class="bi bi-clock-history"></i> Historial
+                            </a>
+                        </li>
+                        
+                        {% if user.perfil.es_bibliotecario %}
+                        <li class="nav-header mt-3 mb-1 px-3 small text-uppercase text-muted">ADMINISTRACIÓN</li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/prestamos/nuevo/' %}active{% endif %}" href="{% url 'registrar_prestamo' %}">
+                                <i class="bi bi-plus-circle"></i> Nuevo Préstamo
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/prestamos/retrasados/' %}active{% endif %}" href="{% url 'prestamos_retrasados' %}">
+                                <i class="bi bi-exclamation-triangle"></i> Préstamos Retrasados
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/" target="_blank">
+                                <i class="bi bi-gear"></i> Panel de Administración
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            
+            <main class="{% if user.is_authenticated %}col-md-9 col-lg-10 offset-md-3 offset-lg-2{% else %}col-12{% endif %} main-content">
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <footer class="footer mt-auto py-3">
+        <div class="container">
+            <span class="text-muted">Sistema de Préstamo de Libros para Docentes &copy; {% now "Y" %}</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

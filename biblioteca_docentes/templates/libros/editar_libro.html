@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo_pagina }} - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_libros' %}">Catálogo</a></li>
+            {% if libro %}
+            <li class="breadcrumb-item"><a href="{% url 'detalle_libro' libro.id %}">{{ libro.titulo }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Editar</li>
+            {% else %}
+            <li class="breadcrumb-item active" aria-current="page">Nuevo Libro</li>
+            {% endif %}
+        </ol>
+    </nav>
+    
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-book"></i> {{ titulo_pagina }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.titulo.id_for_label }}" class="form-label">Título</label>
+                        {{ form.titulo }}
+                        {% if form.titulo.errors %}
+                        <div class="text-danger">{{ form.titulo.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.autor.id_for_label }}" class="form-label">Autor</label>
+                        {{ form.autor }}
+                        {% if form.autor.errors %}
+                        <div class="text-danger">{{ form.autor.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.editorial.id_for_label }}" class="form-label">Editorial</label>
+                        {{ form.editorial }}
+                        {% if form.editorial.errors %}
+                        <div class="text-danger">{{ form.editorial.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.isbn.id_for_label }}" class="form-label">ISBN</label>
+                        {{ form.isbn }}
+                        {% if form.isbn.errors %}
+                        <div class="text-danger">{{ form.isbn.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.stock.id_for_label }}" class="form-label">Stock</label>
+                        {{ form.stock }}
+                        {% if form.stock.errors %}
+                        <div class="text-danger">{{ form.stock.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoría</label>
+                        {{ form.categoria }}
+                        {% if form.categoria.errors %}
+                        <div class="text-danger">{{ form.categoria.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.portada.id_for_label }}" class="form-label">Imagen de Portada</label>
+                        {{ form.portada }}
+                        {% if form.portada.errors %}
+                        <div class="text-danger">{{ form.portada.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB.</div>
+                    </div>
+                    <div class="col-md-6">
+                        {% if libro and libro.portada %}
+                        <div class="mt-2">
+                            <p>Portada actual:</p>
+                            <img src="{{ libro.portada.url }}" alt="{{ libro.titulo }}" class="img-thumbnail" style="max-height: 150px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% if libro %}{% url 'detalle_libro' libro.id %}{% else %}{% url 'lista_libros' %}{% endif %}" class="btn btn-outline-secondary me-md-2">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar Libro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

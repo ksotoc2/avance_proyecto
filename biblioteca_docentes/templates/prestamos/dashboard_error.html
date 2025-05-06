@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Error de Acceso</h4>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle text-danger" style="font-size: 5rem;"></i>
+                    <h3 class="mt-3">Perfil de Usuario No Configurado</h3>
+                    <p class="lead">
+                        Tu perfil de usuario no tiene un rol asignado o no está correctamente configurado.
+                    </p>
+                    <p>
+                        Por favor, contacta al administrador del sistema para que configure tu perfil con el rol adecuado.
+                    </p>
+                    <div class="mt-4">
+                        <a href="{% url 'logout' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

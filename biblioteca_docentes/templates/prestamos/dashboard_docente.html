@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Préstamos Activos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-journal-check fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Préstamos Retrasados</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_retrasados }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Mis Préstamos Activos</h6>
+            <a href="{% url 'mis_prestamos' %}" class="btn btn-sm btn-primary">
+                Ver Todos
+            </a>
+        </div>
+        <div class="card-body">
+            {% if prestamos_activos %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Libro</th>
+                            <th>Fecha Préstamo</th>
+                            <th>Fecha Devolución</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestamo in prestamos_activos %}
+                        <tr class="{% if prestamo.estado == 'retrasado' %}table-danger{% endif %}">
+                            <td>{{ prestamo.libro.titulo }}</td>
+                            <td>{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                            <td>{{ prestamo.fecha_devolucion_esperada|date:"d/m/Y" }}</td>
+                            <td>
+                                <span class="badge {% if prestamo.estado == 'activo' %}bg-success{% elif prestamo.estado == 'retrasado' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ prestamo.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'detalle_prestamo' prestamo.id %}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-info-circle"></i> Detalles
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No tienes préstamos activos en este momento.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'lista_libros' %}" class="btn btn-primary btn-block w-100">
+                                <i class="bi bi-book"></i> Explorar Catálogo
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'mis_prestamos' %}" class="btn btn-info btn-block w-100">
+                                <i class="bi bi-journal-check"></i> Ver Mis Préstamos
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{% url 'historial_prestamos' %}" class="btn btn-secondary btn-block w-100">
+                                <i class="bi bi-clock-history"></i> Historial
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

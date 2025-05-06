@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Préstamo - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            {% if user.perfil.es_docente %}
+            <li class="breadcrumb-item"><a href="{% url 'mis_prestamos' %}">Mis Préstamos</a></li>
+            {% else %}
+            <li class="breadcrumb-item"><a href="{% url 'historial_prestamos' %}">Préstamos</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">Detalle</li>
+        </ol>
+    </nav>
+    
+    <div class="card shadow">
+        <div class="card-header {% if prestamo.estado == 'retrasado' %}bg-danger{% elif prestamo.estado == 'activo' %}bg-success{% elif prestamo.estado == 'perdido' %}bg-warning{% else %}bg-secondary{% endif %} text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-journal-text"></i> Detalle de Préstamo - 
+                <span class="badge bg-light text-dark">{{ prestamo.get_estado_display }}</span>
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">Información del Libro</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">Título:</th>
+                            <td>{{ prestamo.libro.titulo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Autor:</th>
+                            <td>{{ prestamo.libro.autor }}</td>
+                        </tr>
+                        <tr>
+                            <th>Editorial:</th>
+                            <td>{{ prestamo.libro.editorial }}</td>
+                        </tr>
+                        <tr>
+                            <th>ISBN:</th>
+                            <td>{{ prestamo.libro.isbn }}</td>
+                        </tr>
+                        <tr>
+                            <th>Categoría:</th>
+                            <td>{{ prestamo.libro.categoria.nombre }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">Información del Préstamo</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">Usuario:</th>
+                            <td>{{ prestamo.usuario.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Departamento:</th>
+                            <td>{{ prestamo.usuario.perfil.departamento }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha Préstamo:</th>
+                            <td>{{ prestamo.fecha_prestamo|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha Devolución:</th>
+                            <td>{{ prestamo.fecha_devolucion_esperada|date:"d/m/Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Estado:</th>
+                            <td>
+                                <span class="badge {% if prestamo.estado == 'activo' %}bg-success{% elif prestamo.estado == 'retrasado' %}bg-danger{% elif prestamo.estado == 'devuelto' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                    {{ prestamo.get_estado_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if dias_retraso > 0 %}
+                        <tr>
+                            <th>Días de Retraso:</th>
+                            <td class="text-danger fw-bold">{{ dias_retraso }} días</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            {% if devolucion %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5 class="border-bottom pb-2">Información de la Devolución</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">Fecha Devolución:</th>
+                            <td>{{ devolucion.fecha_devolucion|date:"d/m/Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Estado del Libro:</th>
+                            <td>
+                                <span class="badge {% if devolucion.estado_libro == 'bueno' %}bg-success{% elif devolucion.estado_libro == 'dañado' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ devolucion.get_estado_libro_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if devolucion.observacion %}
+                        <tr>
+                            <th>Observaciones:</th>
+                            <td>{{ devolucion.observacion }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                {% if user.perfil.es_docente %}
+                <div class="d-grid w-100 w-md-auto">
+                    <a href="{% url 'mis_prestamos' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Mis Préstamos
+                    </a>
+                </div>
+                {% else %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end w-100">
+                    <div class="d-grid" style="min-width: 200px;">
+                        <a href="{% url 'historial_prestamos' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a Préstamos
+                        </a>
+                    </div>
+                    
+                    {% if user.perfil.es_bibliotecario and prestamo.estado == 'activo' or prestamo.estado == 'retrasado' %}
+                    <div class="d-grid" style="min-width: 200px;">
+                        <a href="{% url 'registrar_devolucion' prestamo.id %}" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Registrar Devolución
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

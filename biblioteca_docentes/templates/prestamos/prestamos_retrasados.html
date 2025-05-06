@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Préstamos Retrasados - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="bi bi-exclamation-triangle"></i> Préstamos Retrasados</h2>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="departamento" class="form-label">Departamento</label>
+                    <select class="form-select" id="departamento" name="departamento">
+                        <option value="">Todos los departamentos</option>
+                        {% for departamento in departamentos %}
+                        <option value="{{ departamento }}" {% if departamento_seleccionado == departamento %}selected{% endif %}>
+                            {{ departamento }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'prestamos_retrasados' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow">
+        <div class="card-header py-3 bg-danger text-white">
+            <h6 class="m-0 font-weight-bold">Préstamos con Retraso</h6>
+        </div>
+        <div class="card-body">
+            {% if prestamos %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Libro</th>
+                            <th>Usuario</th>
+                            <th>Departamento</th>
+                            <th>Fecha Préstamo</th>
+                            <th>Fecha Devolución</th>
+                            <th>Días de Retraso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestamo in prestamos %}
+                        <tr>
+                            <td>{{ prestamo.libro.titulo }}</td>
+                            <td>{{ prestamo.usuario.get_full_name }}</td>
+                            <td>{{ prestamo.usuario.perfil.departamento }}</td>
+                            <td class="text-center">{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                            <td class="text-center">{{ prestamo.fecha_devolucion_esperada|date:"d/m/Y" }}</td>
+                            <td class="text-center text-danger fw-bold">{{ prestamo.dias_retraso }} días</td>
+                            <td class="text-center">
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-grid">
+                                        <a href="{% url 'detalle_prestamo' prestamo.id %}" class="btn btn-sm btn-info">
+                                            <i class="bi bi-info-circle"></i> Detalles
+                                        </a>
+                                    </div>
+                                    <div class="d-grid">
+                                        <a href="{% url 'registrar_devolucion' prestamo.id %}" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check-circle"></i> Registrar Devolución
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                ¡No hay préstamos retrasados en este momento!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

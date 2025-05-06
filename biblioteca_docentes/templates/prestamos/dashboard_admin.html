@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrativo - Sistema de Préstamo de Libros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard Administrativo</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Préstamos Activos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_prestamos_activos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-journal-check fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Préstamos Retrasados</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_prestamos_retrasados }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Préstamos Recientes</h6>
+                    <a href="{% url 'historial_prestamos' %}" class="btn btn-sm btn-primary">
+                        Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if prestamos_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Libro</th>
+                                    <th>Usuario</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prestamo in prestamos_recientes %}
+                                <tr class="{% if prestamo.estado == 'retrasado' %}table-danger{% endif %}">
+                                    <td>{{ prestamo.libro.titulo }}</td>
+                                    <td>{{ prestamo.usuario.get_full_name }}</td>
+                                    <td>{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge {% if prestamo.estado == 'activo' %}bg-success{% elif prestamo.estado == 'retrasado' %}bg-danger{% elif prestamo.estado == 'devuelto' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                            {{ prestamo.get_estado_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No hay préstamos recientes.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Devoluciones Recientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if devoluciones_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Libro</th>
+                                    <th>Usuario</th>
+                                    <th>Fecha Devolución</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for devolucion in devoluciones_recientes %}
+                                <tr>
+                                    <td>{{ devolucion.prestamo.libro.titulo }}</td>
+                                    <td>{{ devolucion.prestamo.usuario.get_full_name }}</td>
+                                    <td>{{ devolucion.fecha_devolucion|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge {% if devolucion.estado_libro == 'bueno' %}bg-success{% elif devolucion.estado_libro == 'dañado' %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ devolucion.get_estado_libro_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No hay devoluciones recientes.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'registrar_prestamo' %}" class="btn btn-success btn-block w-100">
+                                <i class="bi bi-plus-circle"></i> Nuevo Préstamo
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'prestamos_retrasados' %}" class="btn btn-danger btn-block w-100">
+                                <i class="bi bi-exclamation-triangle"></i> Ver Retrasados
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'lista_libros' %}" class="btn btn-primary btn-block w-100">
+                                <i class="bi bi-book"></i> Catálogo
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="/admin/" class="btn btn-dark btn-block w-100" target="_blank">
+                                <i class="bi bi-gear"></i> Panel Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
