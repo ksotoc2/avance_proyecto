@@ -18,7 +18,7 @@ Este proyecto es una plataforma web para la gestión de préstamos de libros en 
 
 ```bash
 git clone <URL-del-repositorio>
-cd biblioteca_docentes
+cd avance_proyecto
 ```
 
 ### 2. Crear y activar el entorno virtual
@@ -37,6 +37,7 @@ source env/bin/activate
 
 ```bash
 pip install -r requirements.txt
+cd biblioteca_docentes
 ```
 
 ---
@@ -56,14 +57,18 @@ python manage.py migrate
 
 Puedes poblar la base de datos con usuarios, libros, préstamos y devoluciones usando estos comandos:
 
+#### Crear usuarios (docentes, bibliotecarios y directores)
 ```bash
-# Crear usuarios (docentes, bibliotecarios y directores)
 python manage.py seed_usuarios --docentes 10 --bibliotecarios 2 --directores 1
+```
 
-# Crear categorías y libros
+#### Crear categorías y libros
+```bash
 python manage.py seed_libros --categorias 8 --libros 50
+```
 
-# Crear préstamos y devoluciones
+#### Crear préstamos y devoluciones
+```bash
 python manage.py seed_prestamos --prestamos 30 --porcentaje_devueltos 60 --porcentaje_retrasados 20
 ```
 
