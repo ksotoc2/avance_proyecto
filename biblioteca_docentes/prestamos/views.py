@@ -3,12 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Prestamo, Devolucion
 from .forms import PrestamoForm, DevolucionForm
 from libros.models import Libro
 from usuarios.models import PerfilUsuario
 from .services import verificar_stock, actualizar_stock, calcular_dias_retraso, actualizar_estado_prestamo
+from reportes.utils import generar_pdf_reporte
 
 @login_required
 def dashboard(request):
@@ -151,7 +153,56 @@ def mis_prestamos(request):
     for prestamo in prestamos:
         actualizar_estado_prestamo(prestamo)
     
-    return render(request, 'prestamos/mis_prestamos.html', {'prestamos': prestamos})
+    # Paginación
+    page = request.GET.get('page', 1)
+    paginator = Paginator(prestamos, 10)  # 10 préstamos por página
+    
+    try:
+        prestamos_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        prestamos_paginados = paginator.page(1)
+    except EmptyPage:
+        prestamos_paginados = paginator.page(paginator.num_pages)
+    
+    # Generar reporte si se solicita
+    if request.GET.get('generar_reporte'):
+        tipo_reporte = request.GET.get('tipo_reporte', 'todos')
+        
+        if tipo_reporte == 'activos':
+            prestamos_reporte = prestamos.filter(estado__in=['activo', 'retrasado'])
+            titulo = "Reporte de Préstamos Activos"
+        elif tipo_reporte == 'historial':
+            prestamos_reporte = prestamos
+            titulo = "Historial Completo de Préstamos"
+        else:
+            prestamos_reporte = prestamos
+            titulo = "Reporte de Préstamos"
+        
+        # Preparar datos para el reporte
+        datos = {
+            'columnas': ['Libro', 'Fecha Préstamo', 'Fecha Devolución', 'Estado'],
+            'filas': [
+                [
+                    p.libro.titulo,
+                    p.fecha_prestamo.strftime('%d/%m/%Y'),
+                    p.fecha_devolucion_esperada.strftime('%d/%m/%Y'),
+                    p.get_estado_display()
+                ]
+                for p in prestamos_reporte
+            ]
+        }
+        
+        # Generar el PDF
+        return generar_pdf_reporte(
+            titulo=titulo,
+            datos=datos,
+            filtros={
+                'Usuario': request.user.get_full_name(),
+                'Departamento': request.user.perfil.departamento
+            }
+        )
+    
+    return render(request, 'prestamos/mis_prestamos.html', {'prestamos': prestamos_paginados})
 
 @login_required
 def historial_prestamos(request):
@@ -182,11 +233,92 @@ def historial_prestamos(request):
             Q(usuario__last_name__icontains=query)
         )
     
+    # Ordenar por fecha de préstamo (más reciente primero)
+    prestamos = prestamos.order_by('-fecha_prestamo')
+    
+    # Paginación
+    page = request.GET.get('page', 1)
+    paginator = Paginator(prestamos, 10)  # 10 préstamos por página
+    
+    try:
+        prestamos_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        prestamos_paginados = paginator.page(1)
+    except EmptyPage:
+        prestamos_paginados = paginator.page(paginator.num_pages)
+    
+    # Generar reporte si se solicita
+    if request.GET.get('generar_reporte'):
+        tipo_reporte = request.GET.get('tipo_reporte', 'todos')
+        
+        # Aplicar filtros adicionales según el tipo de reporte
+        if tipo_reporte == 'activos':
+            prestamos_reporte = prestamos.filter(estado__in=['activo', 'retrasado'])
+            titulo = "Reporte de Préstamos Activos"
+        elif tipo_reporte == 'retrasados':
+            prestamos_reporte = prestamos.filter(estado='retrasado')
+            titulo = "Reporte de Préstamos Retrasados"
+        else:
+            prestamos_reporte = prestamos
+            titulo = "Historial Completo de Préstamos"
+        
+        # Preparar datos para el reporte
+        if request.user.perfil.es_docente():
+            datos = {
+                'columnas': ['Libro', 'Fecha Préstamo', 'Fecha Devolución', 'Estado'],
+                'filas': [
+                    [
+                        p.libro.titulo,
+                        p.fecha_prestamo.strftime('%d/%m/%Y'),
+                        p.fecha_devolucion_esperada.strftime('%d/%m/%Y'),
+                        p.get_estado_display()
+                    ]
+                    for p in prestamos_reporte
+                ]
+            }
+        else:
+            datos = {
+                'columnas': ['Libro', 'Usuario', 'Departamento', 'Fecha Préstamo', 'Fecha Devolución', 'Estado'],
+                'filas': [
+                    [
+                        p.libro.titulo,
+                        p.usuario.get_full_name(),
+                        p.usuario.perfil.departamento,
+                        p.fecha_prestamo.strftime('%d/%m/%Y'),
+                        p.fecha_devolucion_esperada.strftime('%d/%m/%Y'),
+                        p.get_estado_display()
+                    ]
+                    for p in prestamos_reporte
+                ]
+            }
+        
+        # Preparar filtros para el reporte
+        filtros = {}
+        if usuario_id:
+            from django.contrib.auth.models import User
+            usuario = User.objects.get(id=usuario_id)
+            filtros['Usuario'] = usuario.get_full_name()
+        if estado:
+            filtros['Estado'] = dict(Prestamo.ESTADO_CHOICES).get(estado)
+        if query:
+            filtros['Búsqueda'] = query
+        
+        # Generar el PDF
+        return generar_pdf_reporte(titulo=titulo, datos=datos, filtros=filtros)
+    
+    # Obtener lista de usuarios para el filtro (solo para bibliotecarios y directores)
+    usuarios = None
+    if request.user.perfil.es_bibliotecario() or request.user.perfil.es_director():
+        from django.contrib.auth.models import User
+        usuarios = User.objects.filter(perfil__cargo='docente')
+    
     context = {
-        'prestamos': prestamos,
+        'prestamos': prestamos_paginados,
         'estados': Prestamo.ESTADO_CHOICES,
         'estado_seleccionado': estado,
         'query': query,
+        'usuarios': usuarios,
+        'usuario_seleccionado': usuario_id if usuario_id else None,
     }
     
     return render(request, 'prestamos/historial.html', context)
@@ -206,11 +338,55 @@ def prestamos_retrasados(request):
     if departamento:
         prestamos_retrasados = prestamos_retrasados.filter(usuario__perfil__departamento=departamento)
     
+    # Ordenar por días de retraso (más retrasados primero)
+    prestamos_retrasados = prestamos_retrasados.order_by('-fecha_devolucion_esperada')
+    
+    # Paginación
+    page = request.GET.get('page', 1)
+    paginator = Paginator(prestamos_retrasados, 10)  # 10 préstamos por página
+    
+    try:
+        prestamos_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        prestamos_paginados = paginator.page(1)
+    except EmptyPage:
+        prestamos_paginados = paginator.page(paginator.num_pages)
+    
     # Obtener lista de departamentos para el filtro
     departamentos = PerfilUsuario.objects.values_list('departamento', flat=True).distinct()
     
+    # Generar reporte si se solicita
+    if request.GET.get('generar_reporte'):
+        # Preparar datos para el reporte
+        datos = {
+            'columnas': ['Libro', 'Usuario', 'Departamento', 'Fecha Préstamo', 'Fecha Devolución', 'Días de Retraso'],
+            'filas': [
+                [
+                    p.libro.titulo,
+                    p.usuario.get_full_name(),
+                    p.usuario.perfil.departamento,
+                    p.fecha_prestamo.strftime('%d/%m/%Y'),
+                    p.fecha_devolucion_esperada.strftime('%d/%m/%Y'),
+                    p.dias_retraso()
+                ]
+                for p in prestamos_retrasados
+            ]
+        }
+        
+        # Preparar filtros para el reporte
+        filtros = {}
+        if departamento:
+            filtros['Departamento'] = departamento
+        
+        # Generar el PDF
+        return generar_pdf_reporte(
+            titulo="Reporte de Préstamos Retrasados",
+            datos=datos,
+            filtros=filtros
+        )
+    
     context = {
-        'prestamos': prestamos_retrasados,
+        'prestamos': prestamos_paginados,
         'departamentos': departamentos,
         'departamento_seleccionado': departamento,
     }
@@ -236,6 +412,48 @@ def detalle_prestamo(request, prestamo_id):
     except Devolucion.DoesNotExist:
         devolucion = None
     
+    # Generar reporte si se solicita
+    if request.GET.get('generar_reporte'):
+        # Preparar datos para el reporte
+        datos = {
+            'columnas': ['Libro', 'Usuario', 'Departamento', 'Fecha Préstamo', 'Fecha Devolución', 'Estado'],
+            'filas': [
+                [
+                    prestamo.libro.titulo,
+                    prestamo.usuario.get_full_name(),
+                    prestamo.usuario.perfil.departamento,
+                    prestamo.fecha_prestamo.strftime('%d/%m/%Y'),
+                    prestamo.fecha_devolucion_esperada.strftime('%d/%m/%Y'),
+                    prestamo.get_estado_display()
+                ]
+            ]
+        }
+        
+        # Añadir información de devolución si existe
+        if devolucion:
+            datos_devolucion = {
+                'columnas': ['Fecha Devolución', 'Estado del Libro', 'Observaciones'],
+                'filas': [
+                    [
+                        devolucion.fecha_devolucion.strftime('%d/%m/%Y'),
+                        devolucion.get_estado_libro_display(),
+                        devolucion.observacion or "Sin observaciones"
+                    ]
+                ]
+            }
+        else:
+            datos_devolucion = None
+        
+        # Generar el PDF
+        return generar_pdf_reporte(
+            titulo=f"Detalle de Préstamo - {prestamo.libro.titulo}",
+            datos=datos,
+            filtros={
+                'ID Préstamo': prestamo.id,
+                'Días de retraso': calcular_dias_retraso(prestamo) if prestamo.estado == 'retrasado' else 0
+            }
+        )
+    
     context = {
         'prestamo': prestamo,
         'devolucion': devolucion,
@@ -243,3 +461,85 @@ def detalle_prestamo(request, prestamo_id):
     }
     
     return render(request, 'prestamos/detalle_prestamo.html', context)
+
+@login_required
+def libros_inventario(request):
+    # Solo bibliotecarios y directores pueden ver el inventario completo
+    if not (request.user.perfil.es_bibliotecario() or request.user.perfil.es_director()):
+        messages.error(request, "No tienes permisos para ver esta página.")
+        return redirect('dashboard')
+    
+    # Obtener todos los libros
+    libros = Libro.objects.all().select_related('categoria')
+    
+    # Filtrar por categoría si se proporciona
+    categoria_id = request.GET.get('categoria')
+    if categoria_id:
+        libros = libros.filter(categoria_id=categoria_id)
+    
+    # Buscar por título o autor
+    query = request.GET.get('q')
+    if query:
+        libros = libros.filter(Q(titulo__icontains=query) | Q(autor__icontains=query))
+    
+    # Ordenar por título
+    libros = libros.order_by('titulo')
+    
+    # Paginación
+    page = request.GET.get('page', 1)
+    paginator = Paginator(libros, 10)  # 10 libros por página
+    
+    try:
+        libros_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        libros_paginados = paginator.page(1)
+    except EmptyPage:
+        libros_paginados = paginator.page(paginator.num_pages)
+    
+    # Generar reporte si se solicita
+    if request.GET.get('generar_reporte'):
+        # Preparar datos para el reporte
+        datos = {
+            'columnas': ['Título', 'Autor', 'Editorial', 'ISBN', 'Categoría', 'Stock', 'Disponible'],
+            'filas': [
+                [
+                    l.titulo,
+                    l.autor,
+                    l.editorial,
+                    l.isbn,
+                    l.categoria.nombre,
+                    l.stock,
+                    'Sí' if l.disponible() else 'No'
+                ]
+                for l in libros
+            ]
+        }
+        
+        # Preparar filtros para el reporte
+        filtros = {}
+        if categoria_id:
+            from libros.models import CategoriaLibro
+            categoria = CategoriaLibro.objects.get(id=categoria_id)
+            filtros['Categoría'] = categoria.nombre
+        if query:
+            filtros['Búsqueda'] = query
+        
+        # Generar el PDF
+        return generar_pdf_reporte(
+            titulo="Inventario de Libros",
+            datos=datos,
+            filtros=filtros
+        )
+    
+    # Obtener categorías para el filtro
+    from libros.models import CategoriaLibro
+    categorias = CategoriaLibro.objects.all()
+    
+    context = {
+        'libros': libros_paginados,
+        'categorias': categorias,
+        'categoria_seleccionada': int(categoria_id) if categoria_id else None,
+        'query': query,
+    }
+    
+    return render(request, 'libros/inventario.html', context)

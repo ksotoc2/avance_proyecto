@@ -5,8 +5,29 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <h2 class="mb-4"><i class="bi bi-clock-history"></i> Historial de Préstamos</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="card">
+                <div class="card-body p-3">
+                    <h6 class="card-title mb-2">Generar Reporte</h6>
+                    <form method="get" class="d-flex">
+                        <input type="hidden" name="generar_reporte" value="1">
+                        <input type="hidden" name="q" value="{{ query|default:'' }}">
+                        <input type="hidden" name="estado" value="{{ estado_seleccionado|default:'' }}">
+                        <input type="hidden" name="usuario" value="{{ usuario_seleccionado|default:'' }}">
+                        <select name="tipo_reporte" class="form-select me-2">
+                            <option value="todos">Todos los préstamos</option>
+                            <option value="activos">Solo activos</option>
+                            <option value="retrasados">Solo retrasados</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     

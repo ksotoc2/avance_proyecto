@@ -5,8 +5,22 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <h2 class="mb-4"><i class="bi bi-exclamation-triangle"></i> Préstamos Retrasados</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="card">
+                <div class="card-body p-3">
+                    <h6 class="card-title mb-2">Generar Reporte</h6>
+                    <form method="get" class="d-flex">
+                        <input type="hidden" name="generar_reporte" value="1">
+                        <input type="hidden" name="departamento" value="{{ departamento_seleccionado|default:'' }}">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     
