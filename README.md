@@ -57,17 +57,21 @@ python manage.py migrate
 
 Puedes poblar la base de datos con usuarios, libros, préstamos y devoluciones usando estos comandos:
 
-#### Crear usuarios (docentes, bibliotecarios y directores)
+##### Crear usuarios (docentes, bibliotecarios y directores)
 ```bash
 python manage.py seed_usuarios --docentes 10 --bibliotecarios 2 --directores 1
 ```
+###### Ver lista completa de usuarios en consola
+```bash
+python manage.py shell -c "from django.contrib.auth.models import User; print('\n'.join([f'{u.username} - {u.perfil.get_cargo_display()}' for u in User.objects.all()]))"
+```
 
-#### Crear categorías y libros
+##### Crear categorías y libros
 ```bash
 python manage.py seed_libros --categorias 8 --libros 50
 ```
 
-#### Crear préstamos y devoluciones
+##### Crear préstamos y devoluciones
 ```bash
 python manage.py seed_prestamos --prestamos 30 --porcentaje_devueltos 60 --porcentaje_retrasados 20
 ```
